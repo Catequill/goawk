@@ -452,6 +452,65 @@ testdata/g.6:2/6: Duo
 	}
 }
 
+func TestOutputFlag(t *testing.T) {
+	tests := []struct {
+		name   string
+		args   []string
+		stdin  string
+		want   string
+	}{
+		{"separate", []string{"-output"}, "", "hello\n"},
+		{"equals", nil, "", "hello\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			outPath := filepath.Join(dir, "out.txt")
+			var args []string
+			if tt.name == "equals" {
+				args = []string{"-output=" + outPath, `BEGIN { print "hello" }`}
+			} else {
+				args = []string{"-output", outPath, `BEGIN { print "hello" }`}
+			}
+			stdout, stderr, err := runGoAWKRaw(args, tt.stdin)
+			if err != nil {
+				t.Fatalf("goawk failed: %v (stderr=%q)", err, stderr)
+			}
+			if stdout != "" {
+				t.Errorf("expected empty stdout, got %q", stdout)
+			}
+			data, err := os.ReadFile(outPath)
+			if err != nil {
+				t.Fatalf("could not read output file: %v", err)
+			}
+			if string(data) != tt.want {
+				t.Errorf("output file got %q, want %q", string(data), tt.want)
+			}
+		})
+	}
+
+	t.Run("missing-arg", func(t *testing.T) {
+		_, stderr, err := runGoAWKRaw([]string{"-output"}, "")
+		if err == nil {
+			t.Fatal("expected non-zero exit when -output has no argument")
+		}
+		if !strings.Contains(stderr, "flag needs an argument: -output") {
+			t.Errorf("stderr %q missing expected message", stderr)
+		}
+	})
+
+	t.Run("bad-path", func(t *testing.T) {
+		badPath := filepath.Join(t.TempDir(), "no-such-dir", "out.txt")
+		_, stderr, err := runGoAWKRaw([]string{"-output", badPath, `BEGIN { print "x" }`}, "")
+		if err == nil {
+			t.Fatal("expected non-zero exit when output path is not creatable")
+		}
+		if !strings.Contains(stderr, "could not create output file") {
+			t.Errorf("stderr %q missing expected message", stderr)
+		}
+	})
+}
+
 func TestDevStdout(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("/dev/stdout not present on Windows")

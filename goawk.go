@@ -27,6 +27,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -65,6 +66,7 @@ Additional GoAWK features:
                     'csv|tsv [separator=<char>] [comment=<char>] [header]'
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
+  -output file      write program output to file instead of standard output
   -N mode           newline output translation: smart (default), raw, crlf
   -version          show GoAWK version and exit
 
@@ -94,6 +96,7 @@ func main() {
 	memProfile := ""
 	inputMode := ""
 	outputMode := ""
+	outputFile := ""
 	header := false
 	noArgVars := false
 	coverMode := cover.ModeUnspecified
@@ -196,6 +199,12 @@ argsLoop:
 			}
 			i++
 			outputMode = os.Args[i]
+		case "-output":
+			if i+1 >= len(os.Args) {
+				errorExitf("flag needs an argument: -output")
+			}
+			i++
+			outputFile = os.Args[i]
 		case "-N":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -N")
@@ -218,6 +227,8 @@ argsLoop:
 				progFiles = append(progFiles, arg[2:])
 			case strings.HasPrefix(arg, "-i"):
 				inputMode = arg[2:]
+			case strings.HasPrefix(arg, "-output="):
+				outputFile = arg[len("-output="):]
 			case strings.HasPrefix(arg, "-o"):
 				outputMode = arg[2:]
 			case strings.HasPrefix(arg, "-v"):
@@ -343,6 +354,18 @@ argsLoop:
 		stdout = os.Stdout
 	}
 
+	var outputFileHandle *os.File
+	var outputFileWriter *bufio.Writer
+	if outputFile != "" {
+		f, err := os.Create(outputFile)
+		if err != nil {
+			errorExitf("could not create output file: %v", err)
+		}
+		outputFileHandle = f
+		outputFileWriter = bufio.NewWriter(f)
+		stdout = outputFileWriter
+	}
+
 	config := &interp.Config{
 		Argv0:         filepath.Base(os.Args[0]),
 		Args:          expandWildcardsOnWindows(args),
@@ -386,7 +409,20 @@ argsLoop:
 	}
 	status, err := interpreter.Execute(config)
 	if err != nil {
+		if outputFileWriter != nil {
+			_ = outputFileWriter.Flush()
+			_ = outputFileHandle.Close()
+		}
 		errorExit(err)
+	}
+	if outputFileWriter != nil {
+		if flushErr := outputFileWriter.Flush(); flushErr != nil {
+			_ = outputFileHandle.Close()
+			errorExitf("could not write output file: %v", flushErr)
+		}
+		if closeErr := outputFileHandle.Close(); closeErr != nil {
+			errorExitf("could not close output file: %v", closeErr)
+		}
 	}
 
 	if coverProfile != "" {
