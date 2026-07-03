@@ -511,6 +511,66 @@ func TestOutputFlag(t *testing.T) {
 	})
 }
 
+func TestOutputAppendFlag(t *testing.T) {
+	t.Run("appends-to-existing", func(t *testing.T) {
+		dir := t.TempDir()
+		outPath := filepath.Join(dir, "out.txt")
+		if err := os.WriteFile(outPath, []byte("existing\n"), 0644); err != nil {
+			t.Fatalf("could not seed output file: %v", err)
+		}
+		args := []string{"-output", outPath, "-append", `BEGIN { print "hello" }`}
+		stdout, stderr, err := runGoAWKRaw(args, "")
+		if err != nil {
+			t.Fatalf("goawk failed: %v (stderr=%q)", err, stderr)
+		}
+		if stdout != "" {
+			t.Errorf("expected empty stdout, got %q", stdout)
+		}
+		data, err := os.ReadFile(outPath)
+		if err != nil {
+			t.Fatalf("could not read output file: %v", err)
+		}
+		if want := "existing\nhello\n"; string(data) != want {
+			t.Errorf("output file got %q, want %q", string(data), want)
+		}
+	})
+
+	t.Run("creates-when-missing", func(t *testing.T) {
+		dir := t.TempDir()
+		outPath := filepath.Join(dir, "out.txt")
+		args := []string{"-output", outPath, "-append", `BEGIN { print "hello" }`}
+		if _, stderr, err := runGoAWKRaw(args, ""); err != nil {
+			t.Fatalf("goawk failed: %v (stderr=%q)", err, stderr)
+		}
+		data, err := os.ReadFile(outPath)
+		if err != nil {
+			t.Fatalf("could not read output file: %v", err)
+		}
+		if want := "hello\n"; string(data) != want {
+			t.Errorf("output file got %q, want %q", string(data), want)
+		}
+	})
+
+	t.Run("without-append-truncates", func(t *testing.T) {
+		dir := t.TempDir()
+		outPath := filepath.Join(dir, "out.txt")
+		if err := os.WriteFile(outPath, []byte("existing\n"), 0644); err != nil {
+			t.Fatalf("could not seed output file: %v", err)
+		}
+		args := []string{"-output", outPath, `BEGIN { print "hello" }`}
+		if _, stderr, err := runGoAWKRaw(args, ""); err != nil {
+			t.Fatalf("goawk failed: %v (stderr=%q)", err, stderr)
+		}
+		data, err := os.ReadFile(outPath)
+		if err != nil {
+			t.Fatalf("could not read output file: %v", err)
+		}
+		if want := "hello\n"; string(data) != want {
+			t.Errorf("output file got %q, want %q", string(data), want)
+		}
+	})
+}
+
 func TestDevStdout(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("/dev/stdout not present on Windows")
