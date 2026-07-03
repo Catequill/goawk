@@ -67,6 +67,7 @@ Additional GoAWK features:
   -o mode           use CSV output for print with args (ignore OFS and ORS)
                     'csv|tsv [separator=<char>]'
   -output file      write program output to file instead of standard output
+  -append           with -output, append to the file instead of truncating it
   -N mode           newline output translation: smart (default), raw, crlf
   -version          show GoAWK version and exit
 
@@ -97,6 +98,7 @@ func main() {
 	inputMode := ""
 	outputMode := ""
 	outputFile := ""
+	outputAppend := false
 	header := false
 	noArgVars := false
 	coverMode := cover.ModeUnspecified
@@ -205,6 +207,8 @@ argsLoop:
 			}
 			i++
 			outputFile = os.Args[i]
+		case "-append":
+			outputAppend = true
 		case "-N":
 			if i+1 >= len(os.Args) {
 				errorExitf("flag needs an argument: -N")
@@ -357,7 +361,11 @@ argsLoop:
 	var outputFileHandle *os.File
 	var outputFileWriter *bufio.Writer
 	if outputFile != "" {
-		f, err := os.Create(outputFile)
+		openFlags := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+		if outputAppend {
+			openFlags = os.O_CREATE | os.O_WRONLY | os.O_APPEND
+		}
+		f, err := os.OpenFile(outputFile, openFlags, 0644)
 		if err != nil {
 			errorExitf("could not create output file: %v", err)
 		}
