@@ -1,3 +1,6 @@
+// goawk.go is the command-line entry point for GoAWK. See README.md for
+// installation and usage details.
+
 // Package goawk is an implementation of AWK with CSV support
 //
 // You can use the command-line "goawk" command or run AWK from your
