@@ -569,6 +569,20 @@ func TestOutputAppendFlag(t *testing.T) {
 			t.Errorf("output file got %q, want %q", string(data), want)
 		}
 	})
+
+	t.Run("warns-without-output", func(t *testing.T) {
+		args := []string{"-append", `BEGIN { print "hello" }`}
+		stdout, stderr, err := runGoAWKRaw(args, "")
+		if err != nil {
+			t.Fatalf("goawk failed: %v (stderr=%q)", err, stderr)
+		}
+		if want := "hello\n"; stdout != want {
+			t.Errorf("stdout got %q, want %q", stdout, want)
+		}
+		if !strings.Contains(stderr, "-append has no effect without -output") {
+			t.Errorf("stderr %q missing expected warning", stderr)
+		}
+	})
 }
 
 func TestDevStdout(t *testing.T) {
