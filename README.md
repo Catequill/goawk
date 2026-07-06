@@ -1,3 +1,4 @@
+<!-- GoAWK: a POSIX-compatible AWK interpreter written in Go, with CSV/TSV support. -->
 
 # GoAWK: an AWK interpreter with CSV support
 
