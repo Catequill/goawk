@@ -50,6 +50,8 @@ import (
 	"github.com/benhoyt/goawk/parser"
 )
 
+// Program metadata and the usage text shown by -h/--help and on
+// argument errors. Keep version in sync with release tags.
 const (
 	version    = "v1.31.0"
 	copyright  = "GoAWK " + version + " - Copyright (c) 2022 Ben Hoyt"
