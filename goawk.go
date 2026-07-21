@@ -463,6 +463,8 @@ argsLoop:
 	os.Exit(status)
 }
 
+// newlineModeFromString maps the -N flag value to an interp.NewlineMode,
+// exiting with an error if the mode is not one of smart, raw, or crlf.
 func newlineModeFromString(mode string) interp.NewlineMode {
 	switch mode {
 	case "smart":
@@ -477,6 +479,8 @@ func newlineModeFromString(mode string) interp.NewlineMode {
 	}
 }
 
+// coverModeFromString maps the -covermode flag value to a cover.Mode,
+// exiting with an error if the mode is not one of set or count.
 func coverModeFromString(mode string) cover.Mode {
 	switch mode {
 	case "set":
