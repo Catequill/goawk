@@ -1,5 +1,8 @@
 // goawk.go is the command-line entry point for GoAWK. See README.md for
 // installation and usage details.
+//
+// The main package wires argument parsing to the interp package; the reusable
+// interpreter lives under interp/ for embedding in other Go programs.
 
 // Package goawk is an implementation of AWK with CSV support
 //
