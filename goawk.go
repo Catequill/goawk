@@ -77,6 +77,7 @@ Additional GoAWK features:
   -output file      write program output to file instead of standard output
   -append           with -output, append to the file instead of truncating it
   -N mode           newline output translation: smart (default), raw, crlf
+  -repostats        print repository statistics (files, lines, last commit) and exit
   -version          show GoAWK version and exit
 
 GoAWK debugging arguments:
@@ -223,6 +224,11 @@ argsLoop:
 			}
 			i++
 			newlineOutput = newlineModeFromString(os.Args[i])
+		case "-repostats":
+			if err := printRepoStats(os.Stdout); err != nil {
+				errorExit(err)
+			}
+			os.Exit(0)
 		case "-version", "--version":
 			fmt.Println(version)
 			os.Exit(0)
