@@ -366,6 +366,10 @@ argsLoop:
 		stdout = os.Stdout
 	}
 
+	if outputAppend && outputFile == "" {
+		fmt.Fprintln(os.Stderr, "goawk: warning: -append has no effect without -output")
+	}
+
 	var outputFileHandle *os.File
 	var outputFileWriter *bufio.Writer
 	if outputFile != "" {
